@@ -1,0 +1,8 @@
+# Ignore dependencies and build artifacts
+node_modules/
+dist/
+.wrangler/
+.DS_Store
+.env*
+
+
