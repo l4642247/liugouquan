@@ -2,4 +2,17 @@ name = "liugouquan"
 compatibility_date = "2024-11-11"
 pages_build_output_dir = "."
 
+[[d1_databases]]
+binding = "DB"
+database_name = "liugouquan-prod"
+database_id = "24b6da10-edc7-450b-a557-0f0a1f69a8e1"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "liugouquan-images"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "55b63dc0455c4ce6892152a5cd41ded5"
 
