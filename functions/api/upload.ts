@@ -1,15 +1,44 @@
-import { json } from "../_utils";
+import { json, badRequest, Env } from "../_utils";
 
-export const onRequest = async ({ request }: { request: Request }) => {
-  // 先做一个最简单的调试版本，如果这个还能返回 405，说明 /api/upload 根本没走到这个函数
-  return json(
-    {
-      ok: true,
-      method: request.method,
-      message: "simple upload debug handler",
+// 上传图片到 R2，返回可访问的 URL（由 /api/files 代理）
+export const onRequest = async ({ request, env }: { request: Request; env: Env }) => {
+  if (request.method !== "POST") {
+    return json({ detail: "Method Not Allowed" }, { status: 405 });
+  }
+
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("multipart/form-data")) {
+    return badRequest("Content-Type must be multipart/form-data");
+  }
+
+  const formData = await request.formData();
+  const file = formData.get("file");
+
+  if (!(file instanceof File)) {
+    return badRequest("Missing file");
+  }
+
+  const originalName = file.name || "upload";
+  const extMatch = originalName.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : "";
+
+  const randomBytes = new Uint8Array(16);
+  crypto.getRandomValues(randomBytes);
+  const randomHex = Array.from(randomBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const key = `images/${new Date().toISOString().slice(0, 10)}/${randomHex}${ext}`;
+
+  await env.BUCKET.put(key, file.stream(), {
+    httpMetadata: {
+      contentType: file.type || "application/octet-stream",
     },
-    { status: 200 }
-  );
+  });
+
+  const url = `/api/files/${key}`;
+
+  return json({ url }, { status: 201 });
 };
 
 
