@@ -1,4 +1,4 @@
-import { json, jsonBody, requireAuth, queryAll, exec, badRequest } from "../../_utils";
+import { json, jsonBody, requireAuth, queryAll, exec, badRequest, validateContent } from "../../_utils";
 
 export const onRequest = async ({ request, env }: { request: Request; env: any }) => {
   const method = request.method.toUpperCase();
@@ -19,6 +19,10 @@ export const onRequest = async ({ request, env }: { request: Request; env: any }
     const body = await jsonBody<any>(request);
     if (!body.name) {
       return badRequest("name is required");
+    }
+
+    if (!validateContent(body.name) || !validateContent(body.breed) || !validateContent(body.personality)) {
+      return badRequest("内容包含违禁词，请修改后重试");
     }
 
     const now = new Date().toISOString();

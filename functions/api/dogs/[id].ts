@@ -1,4 +1,4 @@
-import { json, jsonBody, requireAuth, notFound, exec } from "../../_utils";
+import { json, jsonBody, requireAuth, notFound, exec, validateContent, badRequest } from "../../_utils";
 
 export const onRequest = async ({
   request,
@@ -27,6 +27,11 @@ export const onRequest = async ({
 
   if (request.method === "PATCH") {
     const body = await jsonBody<any>(request);
+
+    if (!validateContent(body.name) || !validateContent(body.breed) || !validateContent(body.personality)) {
+      return badRequest("内容包含违禁词，请修改后重试");
+    }
+
     const dog = await env.DB.prepare("SELECT * FROM dogs WHERE id = ?").bind(id).first<any>();
     if (!dog || dog.user_id !== userId) {
       return notFound("Dog not found");

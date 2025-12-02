@@ -29,6 +29,21 @@ export const onRequestPost = async ({
     return notFound("宠友不存在或已停用");
   }
 
+  // 检查3分钟内是否向该用户打过招呼
+  const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+  const recentGreeting = await env.DB.prepare(
+    `SELECT id, created_at FROM greetings 
+     WHERE sender_id = ? AND receiver_id = ? AND datetime(created_at) > datetime(?)`
+  ).bind(userId, targetId, threeMinutesAgo).first<any>();
+
+  if (recentGreeting) {
+    // 计算剩余冷却时间
+    const lastTime = new Date(recentGreeting.created_at).getTime();
+    const cooldownEnd = lastTime + 3 * 60 * 1000;
+    const remainingSeconds = Math.ceil((cooldownEnd - Date.now()) / 1000);
+    return badRequest(`请${remainingSeconds}秒后再向该用户打招呼`);
+  }
+
   const body = await jsonBody<{ message?: string | null }>(request);
   const raw = (body.message || "").trim();
   const message = raw || "嗨～很高兴遇见你，一起遛狗吗？";
@@ -36,8 +51,8 @@ export const onRequestPost = async ({
   const now = new Date().toISOString();
   const res = await exec(
     env,
-    `INSERT INTO greetings (sender_id, receiver_id, message, created_at)
-     VALUES (?, ?, ?, ?)`,
+    `INSERT INTO greetings (sender_id, receiver_id, message, greeting_type, status, created_at)
+     VALUES (?, ?, ?, 'hi', 'pending', ?)`,
     userId,
     targetId,
     message,
@@ -45,7 +60,7 @@ export const onRequestPost = async ({
   );
 
   const greeting = await env.DB.prepare(
-    "SELECT id, sender_id, receiver_id, message, created_at FROM greetings WHERE id = ?"
+    "SELECT id, sender_id, receiver_id, message, greeting_type, status, created_at FROM greetings WHERE id = ?"
   )
     .bind(res.lastInsertId)
     .first<any>();

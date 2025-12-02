@@ -30,8 +30,8 @@ export function json(data: unknown, init: ResponseInit = {}): Response {
   });
 }
 
-export function badRequest(message: string): Response {
-  return json({ detail: message }, { status: 400 });
+export function badRequest(message: string, error?: any): Response {
+  return json({ detail: message, error: error?.message || error?.toString() }, { status: 400 });
 }
 
 export function unauthorized(message = "Not authenticated"): Response {
@@ -97,4 +97,15 @@ export async function exec(
   return { success: (res as any).success !== false, lastInsertId: meta.last_row_id ?? meta.lastRowId };
 }
 
+// 简易违禁词库 (仅供演示)
+// 生产环境建议对接微信内容安全接口 security.msgSecCheck
+const FORBIDDEN_WORDS = ['习近平', '共产党', 'admin', 'root', 'fuck', 'shit', '傻逼', '色情', '赌博', 'AV', '毒品', '枪支'];
 
+export function validateContent(text: string | null | undefined): boolean {
+  if (!text) return true;
+  const lower = text.toLowerCase();
+  for (const word of FORBIDDEN_WORDS) {
+    if (lower.includes(word.toLowerCase())) return false;
+  }
+  return true;
+}

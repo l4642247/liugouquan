@@ -3,9 +3,10 @@ export const onRequestGet = async ({
   params,
 }: {
   env: any;
-  params: { key: string };
+  params: { path: string[] };
 }) => {
-  const key = params.key;
+  // catch-all 参数在 Cloudflare Pages Functions 里是数组
+  const key = (params.path || []).join("/");
   if (!key) {
     return new Response("Not found", { status: 404 });
   }
@@ -24,5 +25,4 @@ export const onRequestGet = async ({
 
   return new Response(obj.body, { headers });
 };
-
 

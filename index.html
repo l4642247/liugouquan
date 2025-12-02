@@ -1,97 +1,151 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>liugouquan</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: linear-gradient(135deg, #1e293b, #0f172a);
-        color: #e5e7eb;
-      }
-      .card {
-        padding: 3rem 3.5rem;
-        border-radius: 1.5rem;
-        background: rgba(15, 23, 42, 0.9);
-        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.9);
-        border: 1px solid rgba(148, 163, 184, 0.3);
-        text-align: center;
-        max-width: 520px;
-        width: 100%;
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        background: rgba(56, 189, 248, 0.15);
-        color: #7dd3fc;
-        border: 1px solid rgba(56, 189, 248, 0.4);
-        margin-bottom: 1rem;
-      }
-      h1 {
-        font-size: 2.4rem;
-        margin: 0 0 0.75rem;
-      }
-      p {
-        margin: 0;
-        color: #9ca3af;
-        line-height: 1.7;
-      }
-      .meta {
-        margin-top: 1.75rem;
-        font-size: 0.85rem;
-        color: #6b7280;
-      }
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.35rem 0.85rem;
-        border-radius: 999px;
-        border: 1px solid rgba(75, 85, 99, 0.8);
-        background: rgba(15, 23, 42, 0.8);
-      }
-      @media (max-width: 640px) {
-        .card {
-          margin: 1.5rem;
-          padding: 2rem 1.75rem;
-        }
-        h1 {
-          font-size: 1.9rem;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main class="card">
-      <div class="badge">Cloudflare Pages · Static Site</div>
-      <h1>你好，我是 <strong>liugouquan</strong> 👋</h1>
-      <p>
-        这是一个部署在 <strong>Cloudflare Pages</strong> 上的简单示例页面，<br />
-        代码托管在 GitHub 仓库 <strong>l4642247/liugouquan</strong> 中。
-      </p>
-      <div class="meta">
-        <div class="pill">
-          <span>✨</span>
-          <span>架构：静态 HTML + Cloudflare Pages</span>
-        </div>
-      </div>
-    </main>
-  </body>
-  </html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liugouquan</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f0f1e;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    .content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: rgba(255, 255, 255, 0.8);
+      pointer-events: none; /* 让鼠标事件穿透到 canvas */
+    }
+    h1 {
+      font-weight: 200;
+      font-size: 3rem;
+      letter-spacing: 0.5rem;
+      margin: 0;
+      background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.1rem;
+    }
+  </style>
+</head>
+<body>
 
+  <div class="content">
+    <h1>LIUGOUQUAN</h1>
+    <p>Serverless Backend & Mini-Program API</p>
+  </div>
 
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let particles = [];
+
+    function init() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      particles = [];
+      const count = Math.min(width / 10, 100); // 粒子数量随屏幕宽度自适应
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.1;
+        this.growing = Math.random() > 0.5;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // 边界反弹
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+
+        // 呼吸效果
+        if (this.growing) {
+          this.alpha += 0.005;
+          if (this.alpha >= 0.8) this.growing = false;
+        } else {
+          this.alpha -= 0.005;
+          if (this.alpha <= 0.1) this.growing = true;
+        }
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(161, 196, 253, ${this.alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      
+      // 连线
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+
+        // 寻找附近的粒子连线
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(161, 196, 253, ${0.1 * (1 - dist/100)})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', init);
+    init();
+    animate();
+  </script>
+</body>
+</html>

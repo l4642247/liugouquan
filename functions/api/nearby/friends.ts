@@ -59,7 +59,24 @@ export const onRequestGet = async ({ request, env }: { request: Request; env: an
     Math.max(1, parseInt(limitParam || "20", 10) || 20)
   );
 
-  // 直接从 posts + users 表中查询最近发布的动态，最多 200 条
+  // 获取当前用户ID（可选）
+  let currentUserId: number | null = null;
+  const auth = request.headers.get("authorization") || request.headers.get("Authorization");
+  if (auth && auth.toLowerCase().startsWith("bearer ")) {
+    const token = auth.slice("Bearer ".length).trim();
+    if (token) {
+      const result = await env.DB.prepare("SELECT id FROM users WHERE auth_token = ? AND is_active = 1")
+        .bind(token)
+        .first<{ id: number }>();
+      if (result) {
+        currentUserId = result.id;
+      }
+    }
+  }
+
+  // 只查询最近30分钟内发布动态的用户
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  
   const posts = await queryAll<any>(
     env,
     `SELECT
@@ -74,8 +91,10 @@ export const onRequestGet = async ({ request, env }: { request: Request; env: an
        u.is_active
      FROM posts p
      JOIN users u ON p.user_id = u.id
+     WHERE datetime(p.created_at) >= datetime(?)
      ORDER BY datetime(p.created_at) DESC
-     LIMIT 200`
+     LIMIT 200`,
+    thirtyMinutesAgo
   );
 
   if (!posts.length) return json([]);
@@ -142,6 +161,28 @@ export const onRequestGet = async ({ request, env }: { request: Request; env: an
       tags: buildDogTags(primary),
     };
   }
+
+  // 查询当前用户已打招呼的目标用户
+  let greetedUserIds = new Set<number>();
+  if (currentUserId && ids.length > 0) {
+    const greetings = await queryAll<{ receiver_id: number }>(
+      env,
+      `SELECT DISTINCT receiver_id FROM greetings WHERE sender_id = ? AND receiver_id IN (${placeholders})`,
+      currentUserId,
+      ...ids
+    );
+    for (const g of greetings) {
+      greetedUserIds.add(Number(g.receiver_id));
+    }
+  }
+
+  // 添加已打招呼状态
+  for (const friend of rawFriends) {
+    friend.hiSent = greetedUserIds.has(friend.id);
+  }
+
+  // 按距离排序，最近的在前面
+  rawFriends.sort((a, b) => a.distance_meters - b.distance_meters);
 
   return json(rawFriends);
 };
